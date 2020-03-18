@@ -1,0 +1,18 @@
+<head>
+    <meta charset="utf-8">
+    <script src="https://d3js.org/d3.v5.js"></script>
+    <script src="//unpkg.com/d3-force-bounce/dist/d3-force-bounce.min.js"></script>
+</head>
+
+<body>
+    <div class="canvas-wrapper">
+        <div class="controls">
+            How many stay at home?:
+            <input class="slider" type="range" min="0" max="1" step="0.1" value="0" oninput="onControlChange(this.value, 'bounce', 'elasticity')">
+        </div>
+        <svg id="canvasSimulation">
+        </svg>
+    </div>
+
+    <script src="index.js"></script>
+</body>
