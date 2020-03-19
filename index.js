@@ -27,19 +27,23 @@ function closest_nodee(nodes, source, radius) {
         if (d2 < radius) closest = node, radius = d2;
 
     }
-    console.log(closest);
     return closest;
 }
 
 // Ball settings
-const BALL_RADIUS = 5;
-const BALL_COLORS = ['orange', 'pink'];
+const BALL_RADIUS = 20;
+
+const INFECTED = 'orange';
+const RECOVERED = 'pink';
+const HEALTHY = 'lightblue';
+
+const BALL_COLORS = [INFECTED, HEALTHY];
 
 // Canvas settings
 const canvasWidth = 900;
 const canvasHeight = 500;
 
-const BALL_COUNT = 100;
+const BALL_COUNT = 10;
 const speed = 10;
 
 // Initialise Canvas
@@ -112,17 +116,33 @@ function walls() {
 
 // Infect - change colour after zombie ball infects healthy ball
 function infect() {
-    var ball;
+    var ball,
+        source;
     const nodes = state.forceSim.nodes();
 
     for (var i = 0; i < nodes.length; i++) {
         ball = nodes[i];
 
-        var closest_node = closest_nodee(nodes, ball, 2*BALL_RADIUS+1);
-        if (closest_node != undefined) {
-            var idx = closest_node.index;
-            d3.select("circle#ball"+idx.toString()).style("fill", "blue");
-        }
+        source = document.getElementById("ball"+i.toString());
+        try {
+            if (source.style.fill != INFECTED) {
+                continue;
+            }
+            else {
+                var closest_node = closest_nodee(nodes, ball, 2*BALL_RADIUS+1);
+                if (closest_node != undefined) {
+                    var idx = closest_node.index;
+                    var status = d3.select("circle#ball"+idx.toString()).style("fill");
+                    if (status != RECOVERED) d3.select("circle#ball"+idx.toString()).style("fill", INFECTED);
+                }
+            }
+        } catch (TypeError) {}
+        
+
+        
+        
+
+        
     }
 }
 
@@ -145,7 +165,13 @@ function tick(state) {
 	ball.merge(
 		ball.enter().append('circle')
 			.classed('ball', true)
-			.attr('fill', (d,idx) => BALL_COLORS[idx%200])
+			.style('fill', function(d,idx) {
+                if (idx == 0) {
+                    return INFECTED;
+                } else {
+                    return HEALTHY;
+                }
+            })
 	)
 		.attr('r', d => d.r || BALL_RADIUS)
 		.attr('cx', d => d.x)
