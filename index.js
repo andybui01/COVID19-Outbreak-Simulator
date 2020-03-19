@@ -4,6 +4,33 @@ function getRandomInt(min, max) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+function closest_nodee(nodes, source, radius) {
+    var n = nodes.length,
+        dx,
+        dy,
+        d2,
+        node,
+        closest;
+
+    if (radius == null) radius = Infinity;
+    else radius *= radius;
+
+    for (var i = 0; i < n; ++i) {
+
+        node = nodes[i];
+
+        if (node == source) continue;
+
+        dx = source.x - node.x;
+        dy = source.y - node.y;
+        d2 = dx * dx + dy * dy;
+        if (d2 < radius) closest = node, radius = d2;
+
+    }
+    console.log(closest);
+    return closest;
+}
+
 // Ball settings
 const BALL_RADIUS = 5;
 const BALL_COLORS = ['orange', 'pink'];
@@ -12,7 +39,7 @@ const BALL_COLORS = ['orange', 'pink'];
 const canvasWidth = 900;
 const canvasHeight = 500;
 
-const BALL_COUNT = 200;
+const BALL_COUNT = 100;
 const speed = 10;
 
 // Initialise Canvas
@@ -51,11 +78,14 @@ state.forceSim.force('collision', d3.forceBounce().elasticity(1));
 // Set collision radius
 state.forceSim.force('collision').radius(n => n.r || BALL_RADIUS);
 
-// Make ball bounce off walls.
+// Make ball bounce off walls
 state.forceSim.force('walls', walls);
 
+// Make balls change colour when infected
+state.forceSim.force('infect', infect);
 
-// Walls
+
+// Walls - change directions after making contact with wall
 function walls() {
     var ball;
     for (var i = 0; i < balls.length; i++) {
@@ -80,7 +110,21 @@ function walls() {
     }
 }
 
+// Infect - change colour after zombie ball infects healthy ball
+function infect() {
+    var ball;
+    const nodes = state.forceSim.nodes();
 
+    for (var i = 0; i < nodes.length; i++) {
+        ball = nodes[i];
+
+        var closest_node = closest_nodee(nodes, ball, 2*BALL_RADIUS+1);
+        if (closest_node != undefined) {
+            var idx = closest_node.index;
+            d3.select("circle#ball"+idx.toString()).style("fill", "blue");
+        }
+    }
+}
 
 
 // Initial render
@@ -101,18 +145,15 @@ function tick(state) {
 	ball.merge(
 		ball.enter().append('circle')
 			.classed('ball', true)
-			.attr('fill', (d,idx) => BALL_COLORS[idx%BALL_COLORS.length])
+			.attr('fill', (d,idx) => BALL_COLORS[idx%200])
 	)
 		.attr('r', d => d.r || BALL_RADIUS)
 		.attr('cx', d => d.x)
-		.attr('cy', d => d.y);
+		.attr('cy', d => d.y)
+        .attr('id', (d, idx) => "ball"+idx.toString());
 }
 
 function render() {
-	const numExamples = 7,
-		h = [ 0.25, 0.5, 0.75].map(r => canvasWidth * r),
-		v = d3.range(numExamples).map(n => canvasHeight * (n+0.5)/numExamples);
-
 	// Clear all trails
 	d3.selectAll('.trails').selectAll('*').remove();
 
