@@ -40,6 +40,13 @@ function plusRecover() {
     RECOVERED_COUNT++;
 }
 
+function plusTime() {
+    data[time] = {
+        x: time,
+        y: HEALTHY_COUNT
+    }
+    time++;
+}
 
 // Ball settings
 const BALL_RADIUS = 5;
@@ -65,14 +72,16 @@ state.canvas.attr('width', canvasWidth).attr('height', canvasHeight);
 const balls = [];
 const directions = [-1,1];
 
-// Counting ticks
+// Counting ticks and time
 var tick_count = 0;
+var time = 0;
 
 // Initialise status counts
 var HEALTHY_COUNT = BALL_COUNT;
 var INFECTED_COUNT = 0;
 var RECOVERED_COUNT = 0;
 
+var data = [];
 
 for (var i = 0; i < BALL_COUNT; i++) {
     var direction = directions[Math.floor(Math.random() * directions.length)];
@@ -99,6 +108,7 @@ for (var i = 0; i < BALL_COUNT; i++) {
 balls[0].infected = true;
 balls[0].tick_infected = 0;
 plusInfect();
+plusTime();
 
 // Setup force system
 state.forceSim = d3.forceSimulation()
@@ -172,6 +182,7 @@ function infect() {
                         balls[idx].infected = true;
                         balls[idx].tick_infected = tick_count;
                         plusInfect();
+                        plusTime();
                     }
                 }
             }
@@ -192,6 +203,7 @@ function recover() {
             ball.recovered = true;
             d3.select("circle#ball"+i.toString()).style("fill", RECOVERED);
             plusRecover();
+            plusTime();
         }
     }
 }
@@ -231,8 +243,13 @@ function tick(state) {
     d3.select("span.healthy-count").text(HEALTHY_COUNT.toString());
     d3.select("span.infected-count").text(INFECTED_COUNT.toString());
     d3.select("span.recovered-count").text(RECOVERED_COUNT.toString());
+    d3.select("span.time-count").text(time.toString());
 
     tick_count++;
+
+    if (time>=50) {
+        draw();
+    }
 }
 
 function render() {
