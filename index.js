@@ -31,7 +31,7 @@ function closest_nodee(nodes, source, radius) {
 }
 
 // Ball settings
-const BALL_RADIUS = 20;
+const BALL_RADIUS = 5;
 
 const INFECTED = 'orange';
 const RECOVERED = 'pink';
@@ -43,7 +43,7 @@ const BALL_COLORS = [INFECTED, HEALTHY];
 const canvasWidth = 900;
 const canvasHeight = 500;
 
-const BALL_COUNT = 10;
+const BALL_COUNT = 200;
 const speed = 10;
 
 // Initialise Canvas
@@ -53,6 +53,9 @@ state.canvas.attr('width', canvasWidth).attr('height', canvasHeight);
 // Ball initial positions
 const balls = [];
 const directions = [-1,1];
+
+// Counting ticks
+var tick_count = 0;
 
 for (var i = 0; i < BALL_COUNT; i++) {
     var direction = directions[Math.floor(Math.random() * directions.length)];
@@ -65,8 +68,19 @@ for (var i = 0; i < BALL_COUNT; i++) {
     var init_vy = Math.sqrt(init_v**2 - init_vx**2)*direction;
 
 
-    balls[i] = {x:getRandomInt(0,canvasWidth), y:getRandomInt(0,canvasHeight), future: {vx: init_vx/10, vy: init_vy/10}};
+    balls[i] = {
+        x:getRandomInt(0,canvasWidth),
+        y:getRandomInt(0,canvasHeight),
+        future: {vx: init_vx/10, vy: init_vy/10},
+        infected: false,
+        recovered: false,
+        tick_infected: null
+    }
 }
+
+// Set first ball to be infected
+balls[0].infected = true;
+balls[0].tick_infected = 0;
 
 
 // Setup force system
@@ -87,6 +101,9 @@ state.forceSim.force('walls', walls);
 
 // Make balls change colour when infected
 state.forceSim.force('infect', infect);
+
+// Make balls change colour after recovering
+state.forceSim.force('recover', recover);
 
 
 // Walls - change directions after making contact with wall
@@ -125,7 +142,7 @@ function infect() {
 
         source = document.getElementById("ball"+i.toString());
         try {
-            if (source.style.fill != INFECTED) {
+            if (balls[i].infected == false) {
                 continue;
             }
             else {
@@ -133,19 +150,34 @@ function infect() {
                 if (closest_node != undefined) {
                     var idx = closest_node.index;
                     var status = d3.select("circle#ball"+idx.toString()).style("fill");
-                    if (status != RECOVERED) d3.select("circle#ball"+idx.toString()).style("fill", INFECTED);
+
+
+                    if (balls[idx].recovered == false && balls[idx].infected == false) {
+                        d3.select("circle#ball"+idx.toString()).style("fill", INFECTED);
+                        balls[idx].infected = true;
+                        balls[idx].tick_infected = tick_count;
+                    }
                 }
             }
-        } catch (TypeError) {}
-        
-
-        
-        
-
-        
+        } catch (TypeError) {}    
     }
 }
 
+// Recover - change colour after zombie ball becomes human again
+function recover() {
+    var ball;
+    for (var i = 0; i < balls.length; i++) {
+        ball = balls[i];
+        
+        if (ball.infected == false || ball.recovered == true) continue;
+
+        if (tick_count - ball.tick_infected >= 1000) {
+            ball.infected = false;
+            ball.recovered = true;
+            d3.select("circle#ball"+i.toString()).style("fill", RECOVERED);
+        }
+    }
+}
 
 // Initial render
 render();
@@ -158,6 +190,7 @@ render();
 // }
 
 function tick(state) {
+    
     let ball = state.canvas.selectAll('circle.ball').data(state.forceSim.nodes());
 
 	ball.exit().remove();
@@ -177,6 +210,8 @@ function tick(state) {
 		.attr('cx', d => d.x)
 		.attr('cy', d => d.y)
         .attr('id', (d, idx) => "ball"+idx.toString());
+    
+    tick_count++;
 }
 
 function render() {
