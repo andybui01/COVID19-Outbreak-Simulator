@@ -30,6 +30,17 @@ function closest_nodee(nodes, source, radius) {
     return closest;
 }
 
+function plusInfect() {
+    HEALTHY_COUNT--;
+    INFECTED_COUNT++;
+}
+
+function plusRecover() {
+    INFECTED_COUNT--;
+    RECOVERED_COUNT++;
+}
+
+
 // Ball settings
 const BALL_RADIUS = 5;
 
@@ -57,6 +68,12 @@ const directions = [-1,1];
 // Counting ticks
 var tick_count = 0;
 
+// Initialise status counts
+var HEALTHY_COUNT = BALL_COUNT;
+var INFECTED_COUNT = 0;
+var RECOVERED_COUNT = 0;
+
+
 for (var i = 0; i < BALL_COUNT; i++) {
     var direction = directions[Math.floor(Math.random() * directions.length)];
 
@@ -81,7 +98,7 @@ for (var i = 0; i < BALL_COUNT; i++) {
 // Set first ball to be infected
 balls[0].infected = true;
 balls[0].tick_infected = 0;
-
+plusInfect();
 
 // Setup force system
 state.forceSim = d3.forceSimulation()
@@ -149,13 +166,12 @@ function infect() {
                 var closest_node = closest_nodee(nodes, ball, 2*BALL_RADIUS+1);
                 if (closest_node != undefined) {
                     var idx = closest_node.index;
-                    var status = d3.select("circle#ball"+idx.toString()).style("fill");
-
 
                     if (balls[idx].recovered == false && balls[idx].infected == false) {
                         d3.select("circle#ball"+idx.toString()).style("fill", INFECTED);
                         balls[idx].infected = true;
                         balls[idx].tick_infected = tick_count;
+                        plusInfect();
                     }
                 }
             }
@@ -175,6 +191,7 @@ function recover() {
             ball.infected = false;
             ball.recovered = true;
             d3.select("circle#ball"+i.toString()).style("fill", RECOVERED);
+            plusRecover();
         }
     }
 }
@@ -211,6 +228,10 @@ function tick(state) {
 		.attr('cy', d => d.y)
         .attr('id', (d, idx) => "ball"+idx.toString());
     
+    d3.select("span.healthy-count").text(HEALTHY_COUNT.toString());
+    d3.select("span.infected-count").text(INFECTED_COUNT.toString());
+    d3.select("span.recovered-count").text(RECOVERED_COUNT.toString());
+
     tick_count++;
 }
 
