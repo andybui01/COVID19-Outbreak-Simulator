@@ -1,28 +1,31 @@
 {
-  "name": "covid19-outbreak-simulator",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "private": true,
+  "name": "covid19",
+  "version": "0.0.0",
+  "license": "MIT",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "if-env NODE_ENV=production && npm run -s serve || npm run -s dev",
+    "build": "preact build",
+    "serve": "preact build && sirv build --cors --single",
+    "dev": "preact watch",
+    "lint": "eslint src"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/andybui01/COVID19-Outbreak-Simulator.git"
+  "eslintConfig": {
+    "extends": "eslint-config-synacor"
   },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/andybui01/COVID19-Outbreak-Simulator/issues"
-  },
-  "homepage": "https://github.com/andybui01/COVID19-Outbreak-Simulator#readme",
-  "dependencies": {
-    "babel": "^6.23.0",
-    "d3": "^5.15.0",
-    "d3-force-bounce": "git+https://github.com/andybui01/d3-force-bounce.git"
-  },
+  "eslintIgnore": [
+    "build/*"
+  ],
   "devDependencies": {
-    "@babel/core": "^7.8.7",
-    "@babel/preset-env": "^7.8.7"
+    "eslint": "^6.0.1",
+    "eslint-config-synacor": "^3.0.4",
+    "if-env": "^1.0.0",
+    "preact-cli": "^3.0.0-rc.6",
+    "sirv-cli": "^0.4.5"
+  },
+  "dependencies": {
+    "d3": "^5.15.0",
+    "preact": "^10.1.0",
+    "preact-render-to-string": "^5.1.2"
   }
 }
