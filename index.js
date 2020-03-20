@@ -1,84 +1,28 @@
-function getRandomInt(min, max) {
-    min = Math.ceil(min);
-    max = Math.floor(max);
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function closest_nodee(nodes, source, radius) {
-    var n = nodes.length,
-        dx,
-        dy,
-        d2,
-        node,
-        closest;
-
-    if (radius == null) radius = Infinity;
-    else radius *= radius;
-
-    for (var i = 0; i < n; ++i) {
-
-        node = nodes[i];
-
-        if (node == source) continue;
-
-        dx = source.x - node.x;
-        dy = source.y - node.y;
-        d2 = dx * dx + dy * dy;
-        if (d2 < radius) closest = node, radius = d2;
-
-    }
-    return closest;
-}
-
-function plusInfect() {
-    HEALTHY_COUNT--;
-    INFECTED_COUNT++;
-}
-
-function plusRecover() {
-    INFECTED_COUNT--;
-    RECOVERED_COUNT++;
-}
-
-function plusTime() {
-    data[time] = {
-        time: time,
-        recovered: RECOVERED_COUNT,
-        infected: INFECTED_COUNT,
-        healthy: HEALTHY_COUNT
-        
-    }
-    time++;
-    // Refresh graph
-    d3.select("div#reload").select("div#chart").remove();
-    d3.select("div#reload").append("div").attr("id", "chart");
-
-    draw();
-}
-
 // Ball settings
 const BALL_RADIUS = 5;
 
 const HEALTHY = 'lightblue';
 const INFECTED = 'orange';
-const RECOVERED = 'pink';
+const RECOVERED = 'pink'
 
+// Array of ball states
 const BALL_COLORS = [RECOVERED, HEALTHY, INFECTED];
 
-var isolation = 0;
+// Degree of ball ISOLATION. Stepped from 0-1 by 0.1
+var ISOLATION = 0;
 
 // Canvas settings
-const canvasWidth = 900;
-const canvasHeight = 500;
+const CANVAS_WIDTH = 900;
+const CANVAS_HEIGHT = 500;
 
 const BALL_COUNT = 200;
-const speed = 10;
+const SPEED = 10;
 
 // Initialise Canvas
 const state = {canvas: d3.select('svg#canvasSimulation')};
-state.canvas.attr('width', canvasWidth).attr('height', canvasHeight);
+state.canvas.attr('width', CANVAS_WIDTH).attr('height', CANVAS_HEIGHT);
 
-
+// Array of data, which we use to draw the area graph
 var data;
 
 // Counting ticks and time
@@ -87,13 +31,10 @@ var tick_count, time;
 // Initialise status counts
 var HEALTHY_COUNT, INFECTED_COUNT, RECOVERED_COUNT;
 
-// Ball initial positions
 var balls = [], directions;
 
-function start() {
 
-    // state.canvas.selectAll('circle.ball').data(state.forceSim.nodes()).exit().remove();
-    
+function start() {
     directions = [-1,1];
 
     // Counting ticks and time
@@ -114,36 +55,40 @@ function start() {
 } start();
 
 
+// Generate ball initial positions and velocity
 function generateBalls() {
-    const atHome = (isolation != 0) ? (isolation * BALL_COUNT * 0.1): 1;
+    // atHome constant is used to make a certain amount of balls stay at home
+    const atHome = (ISOLATION != 0) ? (ISOLATION * BALL_COUNT * 0.1): 1;
 
     balls = [];
     for (var i = 0; i < BALL_COUNT; i++) {
         var direction = directions[Math.floor(Math.random() * directions.length)];
 
         var init_vx, init_vy;
-        if (i % atHome == 0) {
-            var init_v = speed; // Hypotenuse speed
 
-            init_vx = Math.floor((Math.random() * speed) + 1)*direction;
+        // If ball is allowed to roam, generate its velocity
+        if (i % atHome == 0) {
+            var init_v = SPEED; // Hypotenuse SPEED
+
+            init_vx = Math.floor((Math.random() * SPEED) + 1)*direction;
 
             direction = directions[Math.floor(Math.random() * directions.length)];
 
             init_vy = Math.sqrt(init_v**2 - init_vx**2)*direction;
         } else {
-            init_vy = init_vx = 0;
+            init_vy = init_vx = 0; // If ball stays at home then velocity is 0
         }
-        
-        
-
 
         balls[i] = {
-            x:getRandomInt(0,canvasWidth),
-            y:getRandomInt(0,canvasHeight),
-            future: {vx: init_vx/10, vy: init_vy/10},
+            x:getRandomInt(0,CANVAS_WIDTH),
+            y:getRandomInt(0,CANVAS_HEIGHT),
+            future: {vx: init_vx/10, vy: init_vy/10}, // Use future so that when we generate
+            // nodes, vx and vy will be the speed & direction the ball travels in.
+
+            // Set all balls to be healthy at first
             infected: false,
             recovered: false,
-            tick_infected: null
+            tick_infected: null // tick_infected stores the tick when balls[i] got infected
         }
     }
 
@@ -151,7 +96,6 @@ function generateBalls() {
     balls[0].infected = true;
     balls[0].tick_infected = 0;
 }
-
 
 
 // Setup force system
@@ -192,12 +136,12 @@ function walls() {
             ball.y = BALL_RADIUS;
             ball.vy = -ball.vy;
         }
-        if (ball.x + BALL_RADIUS > canvasWidth) {
-            ball.x = canvasWidth - BALL_RADIUS;
+        if (ball.x + BALL_RADIUS > CANVAS_WIDTH) {
+            ball.x = CANVAS_WIDTH - BALL_RADIUS;
             ball.vx = -ball.vx;
         }
-        if (ball.y + BALL_RADIUS > canvasHeight) {
-            ball.y = canvasHeight - BALL_RADIUS;
+        if (ball.y + BALL_RADIUS > CANVAS_HEIGHT) {
+            ball.y = CANVAS_HEIGHT - BALL_RADIUS;
             ball.vy = -ball.vy;
         }
     }
@@ -231,9 +175,10 @@ function infect() {
                     }
                 }
             }
-        } catch (TypeError) {}    
+        } catch (TypeError) {}
     }
 }
+
 
 // Recover - change colour after zombie ball becomes human again
 function recover() {
@@ -253,12 +198,15 @@ function recover() {
     }
 }
 
+
 // Initial render
 render();
 
+// If user changes the isolation level, setIsolation restarts the animation with
+// an amount of balls staying at home (dependent on user input).
 function setIsolation(val) {
-    isolation = val;
-    start();
+    ISOLATION = val; // change ISOLATION level
+    start(); // (re)start the simulation
 
     // Recolour the balls
     for (var i = 0; i < BALL_COUNT; i++){
@@ -269,9 +217,12 @@ function setIsolation(val) {
         }
     }
     render();
-    
 }
 
+
+// Tick moves the simulation forward by 1 frame, it checks the data set for any old
+// data, removes the corresponding element, and makes a new element based on the new
+// data entries.
 function tick(state) {
     
     let ball = state.canvas.selectAll('circle.ball').data(state.forceSim.nodes());
@@ -294,6 +245,8 @@ function tick(state) {
 		.attr('cy', d => d.y)
         .attr('id', (d, idx) => "ball"+idx.toString());
     
+
+    // Generate live counter
     d3.select("span.healthy-count").text(HEALTHY_COUNT.toString());
     d3.select("span.infected-count").text(INFECTED_COUNT.toString());
     d3.select("span.recovered-count").text(RECOVERED_COUNT.toString());
@@ -302,6 +255,11 @@ function tick(state) {
     tick_count++;
 }
 
+
+// render() takes the balls[] array and converts them to nodes, which will then
+// be used to draw the simulation.
+//
+// If restarting the simulation is required, call render() again.
 function render() {
 	// Clear all trails
 	d3.selectAll('.trails').selectAll('*').remove();
@@ -318,87 +276,4 @@ function render() {
         });
     }, 800);
 
-}
-
-function draw() {
-
-    // Create SVG and padding for the chart
-    const svg = d3
-        .select("#chart")
-        .append("svg")
-        .attr("height", 200)
-        .attr("width", 400);
-
-    const strokeWidth = 0;
-    const margin = { top: 0, bottom: 20, left: 30, right: 20 };
-    const chart = svg.append("g").attr("transform", `translate(${margin.left},0)`);
-
-    const width = +svg.attr("width") - margin.left - margin.right - strokeWidth * 2;
-    const height = +svg.attr("height") - margin.top - margin.bottom;
-    const grp = chart
-        .append("g")
-        .attr("transform", `translate(-${margin.left - strokeWidth},-${margin.top})`);
-
-    // Create stack
-    const stack = d3.stack().keys(["recovered", "healthy", "infected"]);
-    const stackedValues = stack(data);
-    const stackedData = [];
-    // Copy the stack offsets back into the data.
-    stackedValues.forEach((layer, index) => {
-        const currentStack = [];
-        layer.forEach((d, i) => {
-            currentStack.push({
-                values: d,
-                time: data[i].time
-            });
-        });
-        stackedData.push(currentStack);
-    });
-
-    // Create scales
-    const yScale = d3
-        .scaleLinear()
-        .range([0, height])
-        .domain([0, BALL_COUNT]);
-    const xScale = d3
-        .scaleLinear()
-        .range([0, width])
-        .domain([0,BALL_COUNT*2]);
-
-    const area = d3
-        .area()
-        .x(dataPoint => xScale(dataPoint.time))
-        .y0(dataPoint => yScale(dataPoint.values[0]))
-        .y1(dataPoint => yScale(dataPoint.values[1]));
-
-
-
-    // Actual draw area
-    
-    const series = grp
-    .selectAll(".series")
-    .data(stackedData)
-    .enter()
-    .append("g")
-    .attr("class", "series");
-
-    series.append("path")
-    .attr("transform", `translate(${margin.left},0)`)
-    .style("fill", (d, i) => BALL_COLORS[i])
-    .attr("stroke", "steelblue")
-    .attr("stroke-linejoin", "round")
-    .attr("stroke-linecap", "round")
-    .attr("stroke-width", strokeWidth)
-    .attr("d", d => area(d));
-
-    // Add the X Axis
-    chart
-        .append("g")
-        .attr("transform", `translate(0,${height})`);
-
-    // Add the Y Axis
-    chart
-        .append("g")
-        .attr("transform", `translate(0, 0)`);
-    
 }
