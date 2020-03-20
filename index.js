@@ -51,7 +51,7 @@ function start() {
     generateBalls();
     
     plusInfect();
-    plusTime();
+    // plusTime();
 } start();
 
 
@@ -171,7 +171,7 @@ function infect() {
                         balls[idx].infected = true;
                         balls[idx].tick_infected = tick_count;
                         plusInfect();
-                        plusTime();
+                        // plusTime();
                     }
                 }
             }
@@ -188,12 +188,12 @@ function recover() {
         
         if (ball.infected == false || ball.recovered == true) continue;
 
-        if (tick_count - ball.tick_infected >= 1000) {
+        if (tick_count - ball.tick_infected >= 750) {
             ball.infected = false;
             ball.recovered = true;
             d3.select("circle#ball"+i.toString()).style("fill", RECOVERED);
             plusRecover();
-            plusTime();
+            // plusTime();
         }
     }
 }
@@ -252,6 +252,7 @@ function tick(state) {
     d3.select("span.recovered-count").text(RECOVERED_COUNT.toString());
     d3.select("span.time-count").text(time.toString());
 
+    plusTime();
     tick_count++;
 }
 
