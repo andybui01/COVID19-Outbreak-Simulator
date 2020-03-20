@@ -65,6 +65,8 @@ const RECOVERED = 'pink';
 
 const BALL_COLORS = [RECOVERED, HEALTHY, INFECTED];
 
+var isolation = 0;
+
 // Canvas settings
 const canvasWidth = 900;
 const canvasHeight = 500;
@@ -76,47 +78,81 @@ const speed = 10;
 const state = {canvas: d3.select('svg#canvasSimulation')};
 state.canvas.attr('width', canvasWidth).attr('height', canvasHeight);
 
-// Ball initial positions
-const balls = [];
-const directions = [-1,1];
+
+var data;
 
 // Counting ticks and time
-var tick_count = 0;
-var time = 0;
+var tick_count, time;
 
 // Initialise status counts
-var HEALTHY_COUNT = BALL_COUNT;
-var INFECTED_COUNT = 0;
-var RECOVERED_COUNT = 0;
+var HEALTHY_COUNT, INFECTED_COUNT, RECOVERED_COUNT;
 
-var data = [];
+// Ball initial positions
+var balls = [], directions;
 
-for (var i = 0; i < BALL_COUNT; i++) {
-    var direction = directions[Math.floor(Math.random() * directions.length)];
+function start() {
 
-    var init_v = speed; // Hypotenuse speed
-    var init_vx = Math.floor((Math.random() * speed) + 1)*direction;
+    // state.canvas.selectAll('circle.ball').data(state.forceSim.nodes()).exit().remove();
+    
+    directions = [-1,1];
 
-    direction = directions[Math.floor(Math.random() * directions.length)];
+    // Counting ticks and time
+    tick_count = 0;
+    time = 0;
 
-    var init_vy = Math.sqrt(init_v**2 - init_vx**2)*direction;
+    // Initialise status counts
+    HEALTHY_COUNT = BALL_COUNT;
+    INFECTED_COUNT = 0;
+    RECOVERED_COUNT = 0;
+
+    data = [];
+
+    generateBalls();
+    
+    plusInfect();
+    plusTime();
+} start();
 
 
-    balls[i] = {
-        x:getRandomInt(0,canvasWidth),
-        y:getRandomInt(0,canvasHeight),
-        future: {vx: init_vx/10, vy: init_vy/10},
-        infected: false,
-        recovered: false,
-        tick_infected: null
+function generateBalls() {
+    const atHome = (isolation != 0) ? (isolation * BALL_COUNT * 0.1): 1;
+
+    balls = [];
+    for (var i = 0; i < BALL_COUNT; i++) {
+        var direction = directions[Math.floor(Math.random() * directions.length)];
+
+        var init_vx, init_vy;
+        if (i % atHome == 0) {
+            var init_v = speed; // Hypotenuse speed
+
+            init_vx = Math.floor((Math.random() * speed) + 1)*direction;
+
+            direction = directions[Math.floor(Math.random() * directions.length)];
+
+            init_vy = Math.sqrt(init_v**2 - init_vx**2)*direction;
+        } else {
+            init_vy = init_vx = 0;
+        }
+        
+        
+
+
+        balls[i] = {
+            x:getRandomInt(0,canvasWidth),
+            y:getRandomInt(0,canvasHeight),
+            future: {vx: init_vx/10, vy: init_vy/10},
+            infected: false,
+            recovered: false,
+            tick_infected: null
+        }
     }
+
+    // Set first ball to be infected
+    balls[0].infected = true;
+    balls[0].tick_infected = 0;
 }
 
-// Set first ball to be infected
-balls[0].infected = true;
-balls[0].tick_infected = 0;
-plusInfect();
-plusTime();
+
 
 // Setup force system
 state.forceSim = d3.forceSimulation()
@@ -126,7 +162,8 @@ state.forceSim = d3.forceSimulation()
     // call tick to advance one step...
 
 // Set to 'bounce' type of collision
-state.forceSim.force('collision', d3.forceBounce().elasticity(1));
+state.forceSim.force('collision',
+    d3.forceBounce().elasticity(1));
 
 // Set collision radius
 state.forceSim.force('collision').radius(n => n.r || BALL_RADIUS);
@@ -206,7 +243,7 @@ function recover() {
         
         if (ball.infected == false || ball.recovered == true) continue;
 
-        if (tick_count - ball.tick_infected >= 500) {
+        if (tick_count - ball.tick_infected >= 1000) {
             ball.infected = false;
             ball.recovered = true;
             d3.select("circle#ball"+i.toString()).style("fill", RECOVERED);
@@ -219,12 +256,21 @@ function recover() {
 // Initial render
 render();
 
-// function onControlChange(val, mode, prop) {
-// 	const module = state
-// 	d3.select(module.canvas.node().parentNode).select('.val').text(val);
-// 	module.forceSim.force('collision')[prop](val);
-// 	kickStart();
-// }
+function setIsolation(val) {
+    isolation = val;
+    start();
+
+    // Recolour the balls
+    for (var i = 0; i < BALL_COUNT; i++){
+        if (balls[i].infected) {
+            d3.select("circle#ball"+i.toString()).style("fill", INFECTED);
+        } else {
+            d3.select("circle#ball"+i.toString()).style("fill", HEALTHY);
+        }
+    }
+    render();
+    
+}
 
 function tick(state) {
     
@@ -335,8 +381,6 @@ function draw() {
     .enter()
     .append("g")
     .attr("class", "series");
-    console.log(stackedData);
-
 
     series.append("path")
     .attr("transform", `translate(${margin.left},0)`)

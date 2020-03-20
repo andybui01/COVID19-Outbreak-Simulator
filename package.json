@@ -17,6 +17,12 @@
   },
   "homepage": "https://github.com/andybui01/COVID19-Outbreak-Simulator#readme",
   "dependencies": {
-    "d3": "^5.15.0"
+    "babel": "^6.23.0",
+    "d3": "^5.15.0",
+    "d3-force-bounce": "git+https://github.com/andybui01/d3-force-bounce.git"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.8.7",
+    "@babel/preset-env": "^7.8.7"
   }
 }
