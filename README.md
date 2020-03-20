@@ -9,9 +9,3 @@ https://www.washingtonpost.com/graphics/2020/world/corona-simulator/
 With some improvements:
 - Control sliders for speed, number of people, % who self-isolate, etc.
 - Better collision physics
-
-## Basic usage:
-```
-npm install
-python3 -m http.server
-```
